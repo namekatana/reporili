@@ -1,0 +1,16 @@
+.env
+backend/.env
+frontend/.env
+
+backend/.venv/
+venv/
+backend/__pycache__/
+*.pyc
+backend/test-repo.zip
+
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+
+.DS_Store
+Thumbs.db
