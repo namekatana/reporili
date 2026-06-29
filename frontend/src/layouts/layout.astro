@@ -1,0 +1,25 @@
+---
+import "../styles/global.css";
+
+type LayoutProps = {
+  title?: string;
+};
+
+const { title = "Reporili - legal docs from your codebase" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Reporili turns your repo into tailored Privacy Policy, Terms of Service, and Disclaimer. Upload ZIP or paste a GitHub URL." />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
