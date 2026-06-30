@@ -8,6 +8,7 @@ RUN npm ci
 COPY frontend/ .
 
 ENV PUBLIC_API_URL=
+ENV PUBLIC_SITE_URL=https://reporili.tech
 
 RUN npm run build
 

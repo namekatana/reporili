@@ -1,8 +1,9 @@
 ---
 import Layout from "../layouts/layout.astro";
 import GeneratorApp from "../components/generator-app.svelte";
+import { defaultDescription, defaultTitle } from "../lib/site-seo";
 ---
 
-<Layout>
+<Layout title={defaultTitle} description={defaultDescription}>
   <GeneratorApp client:load />
 </Layout>

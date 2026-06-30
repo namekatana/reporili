@@ -8,6 +8,8 @@
 
 Drop a ZIP or paste a GitHub URL. We scan auth, payments, analytics, and data handling — then generate a tailored Privacy Policy, Terms of Service, and Disclaimer.
 
+**Live:** [reporili.tech](https://reporili.tech)
+
 <br />
 
 <a href="https://fastapi.tiangolo.com/"><img src="docs/readme/badge-fastapi.svg" alt="FastAPI" height="36" /></a>
