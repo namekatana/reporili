@@ -1,22 +1,26 @@
 <script lang="ts">
   import { generateFromGithub, generateFromZip } from "../lib/api-client";
-  import { exportHtml, exportMarkdown } from "../lib/export-documents";
+  import { exportDocx, exportHtml, exportMarkdown } from "../lib/export-documents";
+  import { saveHistoryEntry } from "../lib/document-history";
   import type { GenerateResponse } from "../lib/types";
   import AnalysisSummary from "./analysis-summary.svelte";
+  import CustomScrollbar from "./custom-scrollbar.svelte";
+  import DocumentHistoryPanel from "./document-history-panel.svelte";
   import DocumentViewer from "./document-viewer.svelte";
   import DropZone from "./drop-zone.svelte";
   import GithubInput from "./github-input.svelte";
+  import SiteFooter from "./site-footer.svelte";
 
   const features = [
-    { title: "Privacy Policy", desc: "Data collection, cookies, third parties" },
+    { title: "Privacy Policy", desc: "Data collection, tracking, third parties" },
     { title: "Terms of Service", desc: "Usage rules, liability, accounts" },
     { title: "Disclaimer", desc: "AI draft notice, not legal advice" },
   ];
 
   const steps = [
     { num: "01", title: "Add your repo", desc: "ZIP upload or GitHub link" },
-    { num: "02", title: "We scan the code", desc: "Auth, payments, analytics, storage" },
-    { num: "03", title: "Get your docs", desc: "Export as Markdown or HTML" },
+    { num: "02", title: "We scan the code", desc: "Authentication, billing, tracking, cloud" },
+    { num: "03", title: "Get your docs", desc: "Export as Markdown, HTML, or DOCX" },
   ];
 
   let loading = $state(false);
@@ -24,6 +28,8 @@
   let githubUrl = $state("");
   let selectedFile = $state<File | null>(null);
   let result = $state<GenerateResponse | null>(null);
+  let historyRefresh = $state(0);
+  let exportingDocx = $state(false);
 
   const canGenerate = $derived(
     !loading && (selectedFile !== null || githubUrl.trim().length > 0),
@@ -58,6 +64,11 @@
       } else {
         result = await generateFromGithub(githubUrl.trim());
       }
+
+      if (result) {
+        saveHistoryEntry(result);
+        historyRefresh += 1;
+      }
     } catch (exc) {
       error = exc instanceof Error ? exc.message : "Generation failed";
     } finally {
@@ -78,8 +89,33 @@
     }
     exportHtml(result.documents, result.analysis.projectName);
   }
+
+  async function handleExportDocx() {
+    if (!result || exportingDocx) {
+      return;
+    }
+
+    exportingDocx = true;
+
+    try {
+      await exportDocx(result.documents, result.analysis.projectName);
+    } catch (exc) {
+      error = exc instanceof Error ? exc.message : "DOCX export failed";
+    } finally {
+      exportingDocx = false;
+    }
+  }
+
+  function handleRestoreFromHistory(entry: GenerateResponse) {
+    result = {
+      analysis: entry.analysis,
+      documents: entry.documents,
+    };
+    error = "";
+  }
 </script>
 
+<CustomScrollbar variant="site">
 <div class="page">
   <header class="topbar">
     <div class="brand">
@@ -153,6 +189,8 @@
       {#if error}
         <div class="error-float" role="alert">{error}</div>
       {/if}
+
+      <DocumentHistoryPanel onRestore={handleRestoreFromHistory} refreshToken={historyRefresh} />
     </section>
 
     {#if !result && !loading}
@@ -181,22 +219,22 @@
           documents={result.documents}
           onExportMd={handleExportMd}
           onExportHtml={handleExportHtml}
+          onExportDocx={handleExportDocx}
+          exportingDocx={exportingDocx}
         />
       </section>
     {/if}
   </main>
 
-  <footer class="footer">
-    <span>Reporili</span>
-    <span class="footer-muted">AI drafts, not a law firm</span>
-  </footer>
+  <SiteFooter />
 </div>
+</CustomScrollbar>
 
 <style>
   .page {
-    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    min-height: 100%;
   }
 
   .topbar {
@@ -297,7 +335,6 @@
     padding: 1.1rem 1.25rem;
     background: var(--color-surface);
     border-radius: var(--radius-panel);
-    box-shadow: var(--shadow-soft);
   }
 
   .feature-dot {
@@ -326,7 +363,6 @@
     padding: 1.75rem;
     background: var(--color-surface);
     border-radius: calc(var(--radius-panel) + 4px);
-    box-shadow: var(--shadow-float);
     margin-bottom: 2rem;
   }
 
@@ -475,7 +511,6 @@
     padding: 1.35rem 1.25rem;
     background: var(--color-surface);
     border-radius: var(--radius-panel);
-    box-shadow: var(--shadow-soft);
   }
 
   .step-num {
@@ -521,22 +556,6 @@
     color: var(--color-muted);
   }
 
-  .footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 2rem;
-    max-width: 1120px;
-    width: 100%;
-    margin: 0 auto;
-    font-size: 0.82rem;
-    color: var(--color-soft);
-  }
-
-  .footer-muted {
-    color: var(--color-muted);
-  }
-
   @media (max-width: 900px) {
     .feature-row,
     .steps-grid {
@@ -556,8 +575,7 @@
     }
 
     .topbar,
-    .main,
-    .footer {
+    .main {
       padding-left: 1.25rem;
       padding-right: 1.25rem;
     }

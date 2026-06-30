@@ -44,7 +44,6 @@
     padding: 1.35rem 1.5rem;
     background: var(--color-surface);
     border-radius: var(--radius-panel);
-    box-shadow: var(--shadow-soft);
   }
 
   .header {

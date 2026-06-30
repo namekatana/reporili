@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CustomScrollbar from "./custom-scrollbar.svelte";
   import { renderMarkdown } from "../lib/export-documents";
   import { documentList, type DocumentKey, type GeneratedDocuments } from "../lib/types";
 
@@ -6,9 +7,17 @@
     documents: GeneratedDocuments;
     onExportMd: () => void;
     onExportHtml: () => void;
+    onExportDocx: () => void;
+    exportingDocx?: boolean;
   };
 
-  let { documents, onExportMd, onExportHtml }: DocumentViewerProps = $props();
+  let {
+    documents,
+    onExportMd,
+    onExportHtml,
+    onExportDocx,
+    exportingDocx = false,
+  }: DocumentViewerProps = $props();
 
   let activeKey = $state<DocumentKey>("privacyPolicy");
 
@@ -33,16 +42,19 @@
 
     <div class="exports">
       <button class="export-btn" onclick={onExportMd}>Export MD</button>
-      <button class="export-btn primary" onclick={onExportHtml}>Export HTML</button>
+      <button class="export-btn" onclick={onExportHtml}>Export HTML</button>
+      <button class="export-btn primary" disabled={exportingDocx} onclick={onExportDocx}>
+        {exportingDocx ? "Building DOCX..." : "Export DOCX"}
+      </button>
     </div>
   </div>
 
-  <div class="content-float">
+  <CustomScrollbar variant="document" class="content-float">
     <h3 class="doc-title">{activeDoc.label}</h3>
     <div class="prose-doc">
       {@html activeHtml}
     </div>
-  </div>
+  </CustomScrollbar>
 </div>
 
 <style>
@@ -117,19 +129,38 @@
     color: #111;
   }
 
-  .export-btn.primary:hover {
+  .export-btn.primary:hover:not(:disabled) {
     background: #fff;
     color: #000;
   }
 
-  .content-float {
-    padding: 1.75rem 2rem;
+  :global(.content-float) {
+    padding: 0;
     background: var(--color-surface);
     border-radius: var(--radius-panel);
-    box-shadow: var(--shadow-soft);
-    min-height: 360px;
-    max-height: 65vh;
-    overflow-y: auto;
+    overflow: hidden;
+  }
+
+  :global(.content-float) .prose-doc,
+  :global(.content-float) .prose-doc :global(*) {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  :global(.content-float) .prose-doc {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  :global(.content-float) .prose-doc :global(pre),
+  :global(.content-float) .prose-doc :global(code) {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.content-float) .prose-doc :global(ul),
+  :global(.content-float) .prose-doc :global(ol) {
+    padding-right: 0.25rem;
   }
 
   .doc-title {
