@@ -29,6 +29,18 @@ server {
         return 404;
     }
 
+    location ^~ /_astro/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:css|js|webp|jpg|jpeg|png|gif|ico|svg|woff2?)$ {
+        expires 30d;
+        add_header Cache-Control "public" always;
+        try_files $uri =404;
+    }
+
     location /api/generate/ {
         limit_req zone=generateLimit burst=1 nodelay;
         limit_conn connLimit 3;

@@ -17,7 +17,7 @@ const { title = defaultTitle, description = defaultDescription } = Astro.props;
 
 const siteUrl = resolveSiteUrl();
 const pageUrl = new URL(Astro.url.pathname, siteUrl).href;
-const ogImageUrl = new URL("/og.png", siteUrl).href;
+const ogImageUrl = new URL("/og.jpg", siteUrl).href;
 const jsonLd = buildJsonLd(siteUrl, pageUrl);
 const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
 ---
