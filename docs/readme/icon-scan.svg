@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Code scan">
+  <rect width="48" height="48" rx="14" fill="#181818"/>
+  <g transform="translate(12, 12)" fill="#f5f5f5">
+    <path d="M9.4 16.6 4.8 12l4.6-4.6L8 6 2 12l6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+  </g>
+</svg>
