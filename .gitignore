@@ -1,6 +1,7 @@
 .env
 backend/.env
 frontend/.env
+backups/
 
 backend/.venv/
 venv/
