@@ -28,39 +28,58 @@ def generateDocuments(analysis: RepoAnalysis) -> GeneratedDocuments:
 
 
 def _buildPrompt(projectName: str, summary: str, analysis: RepoAnalysis) -> str:
-    hasPayments = any(p.category == "payments" for p in analysis.patterns)
-    paymentNote = (
-        "Include a dedicated Payment and Billing section covering subscriptions, refunds, and third-party payment processors."
-        if hasPayments
-        else ""
-    )
+    detectedCategories = [p.category for p in analysis.patterns]
+    sectionNotes: list[str] = []
 
-    return f"""You are a legal document drafter for software products. Generate project-specific legal documents based ONLY on the code analysis below. Do not use generic boilerplate — tailor every section to what the code actually does.
+    if "payments" in detectedCategories:
+        sectionNotes.append("- Include Payment and Billing terms (subscriptions, refunds, third-party processors).")
+    else:
+        sectionNotes.append("- Do NOT include payment, billing, or subscription sections.")
+
+    if "auth" in detectedCategories:
+        sectionNotes.append("- Include account registration, authentication, and credential handling sections.")
+    else:
+        sectionNotes.append("- Do NOT include user accounts or login sections unless required for a detected auth system.")
+
+    if "analytics" in detectedCategories:
+        sectionNotes.append("- Include analytics and tracking disclosure with named providers from the analysis.")
+    else:
+        sectionNotes.append("- Do NOT include analytics or marketing cookies sections unless detected.")
+
+    sectionRules = "\n".join(sectionNotes)
+
+    return f"""You draft public-facing legal documents for a software product. Write for end users, not developers.
 
 Project name: {projectName}
 
-Code analysis:
+Internal analysis (for your reasoning only):
 {summary}
-
-{paymentNote}
 
 Output format — use exactly these markdown headers:
 
 ## Privacy Policy
-(full document)
-
 ## Terms of Service
-(full document)
-
 ## Disclaimer
-(short disclaimer that documents are AI-generated drafts, not legal advice)
 
-Rules:
-- Write in clear English
-- Reference specific technologies found (auth, payments, analytics, etc.)
-- If a data practice was NOT detected, do not claim it exists
-- Use markdown formatting
-- Be thorough but concise (each main document 800-1500 words)
+Style and content rules:
+- Write clear English suitable for a product website
+- Describe what the service actually does and what data flows occur
+- Use product and vendor names (GitHub API, Google Gemini), never source file names or module paths
+- Never mention "code analysis", "patterns detected", "scan", or how these documents were generated inside Privacy Policy or Terms
+- Never write sections titled "Information We Do Not Collect" or explain missing features
+- If a practice was not detected, omit that topic entirely instead of denying it repeatedly
+- Include only sections that apply: auth, payments, analytics, email, cookies, geo — skip absent categories
+- Describe real flows from the analysis: ZIP/GitHub input, third-party API calls, AI processing, HTTP hosting
+- Do not claim users must connect a GitHub account unless OAuth/login was detected
+- Do not claim zero IP collection if the product is a web service; standard server logs may record IP addresses and request metadata
+- Do not claim data is never stored if code is sent to third-party AI; disclose that code excerpts/summaries are transmitted to Google Gemini
+- Use placeholders where facts are unknown: [Company Name], [Contact Email], [Jurisdiction]
+- Keep Disclaimer short (2-4 sentences): AI-generated draft, not legal advice, consult a lawyer
+
+Section rules:
+{sectionRules}
+
+Length: Privacy Policy and Terms of Service each 600-1200 words. No filler, no repetition.
 """
 
 
