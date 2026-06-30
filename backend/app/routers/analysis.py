@@ -8,23 +8,27 @@ from app.services.analysisservice import (
     analyzeZipUpload,
 )
 from app.services.geminigenerator import GeminiGeneratorError
+from app.uploadlimits import readZipUpload
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
 
-@router.post("/analyze/zip", response_model=AnalyzeResponse)
-async def analyzeZip(file: UploadFile = File(...)) -> AnalyzeResponse:
-    if not file.filename or not file.filename.lower().endswith(".zip"):
+def _requireZipName(filename: str | None) -> None:
+    if not filename or not filename.lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Upload a .zip archive")
 
-    data = await file.read()
-    if not data:
-        raise HTTPException(status_code=400, detail="Empty file")
+
+@router.post("/analyze/zip", response_model=AnalyzeResponse)
+async def analyzeZip(file: UploadFile = File(...)) -> AnalyzeResponse:
+    _requireZipName(file.filename)
+    data = await readZipUpload(file)
 
     try:
         analysis = await analyzeZipUpload(data, file.filename)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Failed to parse ZIP: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to parse ZIP archive") from None
 
     return AnalyzeResponse(analysis=analysis)
 
@@ -35,27 +39,25 @@ async def analyzeGithub(body: GithubAnalyzeRequest) -> AnalyzeResponse:
         analysis = await analyzeGithubRepo(body.githubUrl)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to fetch repository: {exc}") from exc
+    except Exception:
+        raise HTTPException(status_code=502, detail="Failed to fetch repository") from None
 
     return AnalyzeResponse(analysis=analysis)
 
 
 @router.post("/generate/zip", response_model=GenerateResponse)
 async def generateFromZip(file: UploadFile = File(...)) -> GenerateResponse:
-    if not file.filename or not file.filename.lower().endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Upload a .zip archive")
-
-    data = await file.read()
-    if not data:
-        raise HTTPException(status_code=400, detail="Empty file")
+    _requireZipName(file.filename)
+    data = await readZipUpload(file)
 
     try:
         return await analyzeAndGenerateZip(data, file.filename)
     except GeminiGeneratorError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Failed to process ZIP: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to process ZIP archive") from None
 
 
 @router.post("/generate/github", response_model=GenerateResponse)
@@ -66,5 +68,5 @@ async def generateFromGithub(body: GithubAnalyzeRequest) -> GenerateResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except GeminiGeneratorError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to process repository: {exc}") from exc
+    except Exception:
+        raise HTTPException(status_code=502, detail="Failed to process repository") from None

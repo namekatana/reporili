@@ -22,7 +22,7 @@ def generateDocuments(analysis: RepoAnalysis) -> GeneratedDocuments:
         response = model.generate_content(prompt)
         text = response.text
     except Exception as exc:
-        raise GeminiGeneratorError(f"Gemini API error: {exc}") from exc
+        raise GeminiGeneratorError("Document generation failed") from exc
 
     return _parseResponse(text)
 

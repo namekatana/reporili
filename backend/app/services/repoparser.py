@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from app.config import settings
 
+GITHUB_SEGMENT = re.compile(r"^[a-zA-Z0-9._-]+$")
+
 
 @dataclass
 class ParsedFile:
@@ -30,6 +32,8 @@ def parseZipArchive(data: bytes, projectName: str = "project") -> ParsedRepo:
             if name.endswith("/"):
                 continue
             relativePath = name[len(rootPrefix) :] if rootPrefix and name.startswith(rootPrefix) else name
+            if not _isSafePath(relativePath):
+                continue
             if _shouldSkip(relativePath):
                 continue
             if not _isTextFile(relativePath):
@@ -78,6 +82,13 @@ def _inferProjectName(names: list[str]) -> str:
     return "project"
 
 
+def _isSafePath(path: str) -> bool:
+    normalized = path.replace("\\", "/")
+    if normalized.startswith("/") or ".." in normalized.split("/"):
+        return False
+    return True
+
+
 def _shouldSkip(path: str) -> bool:
     parts = path.replace("\\", "/").split("/")
     for part in parts:
@@ -119,5 +130,9 @@ def parseGithubUrl(url: str) -> tuple[str, str, str | None]:
             owner = match.group("owner")
             repo = match.group("repo").removesuffix(".git")
             branch = match.groupdict().get("branch")
+            if not GITHUB_SEGMENT.match(owner) or not GITHUB_SEGMENT.match(repo):
+                raise ValueError(f"Invalid GitHub URL: {url}")
+            if branch and not GITHUB_SEGMENT.match(branch):
+                raise ValueError(f"Invalid GitHub URL: {url}")
             return owner, repo, branch
     raise ValueError(f"Invalid GitHub URL: {url}")
