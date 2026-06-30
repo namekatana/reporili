@@ -1,5 +1,7 @@
 <script lang="ts">
-  const githubUrl = "https://github.com/namekatana/reporili";
+  import { resolveGithubUrl } from "../lib/site-config";
+
+  const githubUrl = resolveGithubUrl();
 </script>
 
 <footer class="site-footer">

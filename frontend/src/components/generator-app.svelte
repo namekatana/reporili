@@ -1,6 +1,6 @@
 <script lang="ts">
   import { generateFromGithub, generateFromZip } from "../lib/api-client";
-  import { exportDocx, exportHtml, exportMarkdown } from "../lib/export-documents";
+  import { exportHtml, exportMarkdown } from "../lib/export-documents";
   import { saveHistoryEntry } from "../lib/document-history";
   import type { GenerateResponse } from "../lib/types";
   import AnalysisSummary from "./analysis-summary.svelte";
@@ -98,6 +98,7 @@
     exportingDocx = true;
 
     try {
+      const { exportDocx } = await import("../lib/export-docx");
       await exportDocx(result.documents, result.analysis.projectName);
     } catch (exc) {
       error = exc instanceof Error ? exc.message : "DOCX export failed";

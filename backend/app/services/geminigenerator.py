@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 
 from app.config import settings
 from app.schemas.analysis import GeneratedDocuments, RepoAnalysis
@@ -13,16 +13,21 @@ def generateDocuments(analysis: RepoAnalysis) -> GeneratedDocuments:
     if not settings.geminiApiKey:
         raise GeminiGeneratorError("GEMINI_API_KEY is not configured")
 
-    genai.configure(api_key=settings.geminiApiKey)
-    model = genai.GenerativeModel(settings.geminiModel)
+    client = genai.Client(api_key=settings.geminiApiKey)
     summary = buildAnalysisSummary(analysis)
     prompt = _buildPrompt(analysis.projectName, summary, analysis)
 
     try:
-        response = model.generate_content(prompt)
-        text = response.text
+        response = client.models.generate_content(
+            model=settings.geminiModel,
+            contents=prompt,
+        )
+        text = response.text or ""
     except Exception as exc:
         raise GeminiGeneratorError("Document generation failed") from exc
+
+    if not text.strip():
+        raise GeminiGeneratorError("Document generation failed")
 
     return _parseResponse(text)
 

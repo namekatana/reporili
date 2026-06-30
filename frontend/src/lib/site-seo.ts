@@ -1,3 +1,5 @@
+import { resolveGithubUrl, resolveSiteUrl } from "./site-config";
+
 export const siteName = "Reporili";
 
 export const defaultTitle = "Reporili — Privacy Policy, Terms & Disclaimer from your codebase";
@@ -5,11 +7,11 @@ export const defaultTitle = "Reporili — Privacy Policy, Terms & Disclaimer fro
 export const defaultDescription =
   "Generate tailored Privacy Policy, Terms of Service, and Disclaimer by scanning your GitHub repo or ZIP. Built for developers shipping SaaS, apps, and APIs.";
 
-export function resolveSiteUrl(): string {
-  return (import.meta.env.PUBLIC_SITE_URL ?? "https://reporili.tech").replace(/\/$/, "");
-}
+export { resolveSiteUrl };
 
 export function buildJsonLd(siteUrl: string, pageUrl: string) {
+  const githubUrl = resolveGithubUrl().replace(/\/$/, "");
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -50,7 +52,7 @@ export function buildJsonLd(siteUrl: string, pageUrl: string) {
         name: siteName,
         url: siteUrl,
         logo: `${siteUrl}/logo.png`,
-        sameAs: ["https://github.com/namekatana/reporili"],
+        sameAs: [githubUrl],
       },
     ],
   };

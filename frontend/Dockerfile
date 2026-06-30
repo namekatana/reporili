@@ -9,6 +9,7 @@ COPY frontend/ .
 
 ENV PUBLIC_API_URL=
 ENV PUBLIC_SITE_URL=https://reporili.tech
+ENV PUBLIC_GITHUB_URL=https://github.com/namekatana/reporili
 
 RUN npm run build
 

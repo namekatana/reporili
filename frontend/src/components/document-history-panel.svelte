@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import {    clearHistory,
+  import {
+    clearHistory,
     formatHistoryDate,
     isHistoryEnabled,
     loadHistory,
