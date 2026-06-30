@@ -1,11 +1,11 @@
 PATTERNS: dict[str, list[str]] = {
-    "auth": ["jwt", "oauth", "session", "login", "password", "bcrypt"],
-    "payments": ["stripe", "paypal", "checkout", "billing", "subscription"],
-    "analytics": ["google-analytics", "mixpanel", "amplitude", "gtag"],
-    "email": ["smtp", "sendgrid", "mailgun", "nodemailer"],
-    "storage": ["s3", "firebase", "supabase", "cloudinary"],
-    "cookies": ["cookie", "localStorage", "sessionStorage"],
-    "geo": ["ip", "geolocation", "location"],
+    "auth": ["jwt", "oauth", "bcrypt", "passport", "fastapi-users", "nextauth"],
+    "payments": ["stripe", "paypal", "paddle", "lemon-squeezy", "checkout.session"],
+    "analytics": ["google-analytics", "mixpanel", "amplitude", "gtag(", "segment.com"],
+    "email": ["smtp", "sendgrid", "mailgun", "nodemailer", "fastapi-mail"],
+    "storage": ["boto3", "s3://", "@aws-sdk/client-s3", "firebase", "supabase", "cloudinary"],
+    "cookies": ["document.cookie", "set-cookie", "localstorage", "sessionstorage"],
+    "geo": ["geolocation", "geoip", "maxmind", "navigator.geolocation"],
 }
 
 SKIP_DIRS: set[str] = {
@@ -22,6 +22,21 @@ SKIP_DIRS: set[str] = {
     ".idea",
     ".vscode",
 }
+
+SKIP_SCAN_SUFFIXES: tuple[str, ...] = (
+    "patterns.py",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "geminigenerator.py",
+)
+
+SKIP_SCAN_PARTS: tuple[str, ...] = (
+    "/constants/",
+    "\\constants\\",
+    "/scripts/",
+    "\\scripts\\",
+)
 
 TEXT_EXTENSIONS: set[str] = {
     ".py",
@@ -49,7 +64,6 @@ TEXT_EXTENSIONS: set[str] = {
     ".toml",
     ".xml",
     ".env",
-    ".md",
     ".sql",
     ".graphql",
     ".prisma",
