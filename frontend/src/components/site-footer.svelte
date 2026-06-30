@@ -11,6 +11,12 @@
       <span class="footer-note">AI drafts, not a law firm</span>
     </div>
 
+    <nav class="footer-nav" aria-label="Legal">
+      <a class="footer-link" href="/privacy">Privacy</a>
+      <a class="footer-link" href="/terms">Terms</a>
+      <a class="footer-link" href="/disclaimer">Disclaimer</a>
+    </nav>
+
     <div class="footer-actions">
       <a class="github-btn" href={githubUrl} target="_blank" rel="noopener noreferrer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -57,6 +63,24 @@
     color: var(--color-muted);
   }
 
+  .footer-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-link {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-link:hover {
+    color: var(--color-bright);
+  }
+
   .footer-actions {
     display: flex;
     align-items: center;
@@ -91,6 +115,15 @@
     .footer-inner {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .footer-nav {
+      order: 2;
+    }
+
+    .footer-actions {
+      order: 3;
+      width: 100%;
     }
 
     .github-btn {

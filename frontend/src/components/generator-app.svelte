@@ -178,6 +178,12 @@
         </div>
       {/if}
 
+      <p class="upload-consent">
+        By uploading or submitting a repository URL, you confirm you have the right to share this
+        code. See our <a href="/terms">Terms of Service</a> and
+        <a href="/privacy">Privacy Policy</a>.
+      </p>
+
       <button class="generate-btn" disabled={!canGenerate} onclick={handleGenerate}>
         {#if loading}
           <span class="spinner"></span>
@@ -436,6 +442,24 @@
 
   .clear-btn:hover:not(:disabled) {
     background: #333;
+    color: var(--color-bright);
+  }
+
+  .upload-consent {
+    margin-bottom: 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+    text-align: center;
+  }
+
+  .upload-consent a {
+    color: var(--color-soft);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .upload-consent a:hover {
     color: var(--color-bright);
   }
 
