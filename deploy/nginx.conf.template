@@ -1,5 +1,5 @@
 limit_req_zone $binary_remote_addr zone=apiLimit:10m rate=30r/m;
-limit_req_zone $binary_remote_addr zone=generateLimit:10m rate=6r/h;
+limit_req_zone $binary_remote_addr zone=generateLimit:10m rate=1r/m;
 limit_conn_zone $binary_remote_addr zone=connLimit:10m;
 
 server {
