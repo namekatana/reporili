@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -5,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import analysis
+
+logger = logging.getLogger(__name__)
 
 isProduction = os.getenv("ENVIRONMENT", "production") == "production"
 
@@ -25,6 +28,12 @@ app.add_middleware(
 )
 
 app.include_router(analysis.router)
+
+
+@app.on_event("startup")
+async def validateProductionSecurity() -> None:
+    if isProduction and not settings.proxySecret:
+        logger.warning("PROXY_SECRET is not set; API accepts unauthenticated requests")
 
 
 @app.get("/health")

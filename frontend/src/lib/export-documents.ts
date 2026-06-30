@@ -1,10 +1,28 @@
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { Document, HeadingLevel, Packer, Paragraph, PageBreak } from "docx";
 import { markdownToParagraphs } from "./markdown-to-docx";
 import { slugifyProjectName } from "./slugify";
 import type { GeneratedDocuments } from "./types";
 import { documentList } from "./types";
+
 marked.setOptions({ gfm: true, breaks: true });
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizeHtml(html: string): string {
+  if (typeof window === "undefined") {
+    return html;
+  }
+  return DOMPurify.sanitize(html);
+}
 
 function buildMarkdown(documents: GeneratedDocuments, projectName: string): string {
   const sections = documentList
@@ -21,12 +39,13 @@ function buildMarkdown(documents: GeneratedDocuments, projectName: string): stri
 }
 
 function buildHtmlShell(title: string, bodyHtml: string): string {
+  const safeTitle = escapeHtml(title);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -63,18 +82,19 @@ function buildHtmlShell(title: string, bodyHtml: string): string {
 }
 
 function buildHtml(documents: GeneratedDocuments, projectName: string): string {
+  const safeProjectName = escapeHtml(projectName);
   const sections = documentList
     .map((doc) => {
       const body = documents[doc.key].trim();
       if (!body) {
         return "";
       }
-      const html = marked.parse(body);
-      return `<h2>${doc.label}</h2>\n${html}`;
+      const html = sanitizeHtml(marked.parse(body) as string);
+      return `<h2>${escapeHtml(doc.label)}</h2>\n${html}`;
     })
     .filter(Boolean);
 
-  const bodyHtml = `<h1>${projectName} Legal Documents</h1>\n${sections.join("\n<hr />\n")}`;
+  const bodyHtml = `<h1>${safeProjectName} Legal Documents</h1>\n${sections.join("\n<hr />\n")}`;
   return buildHtmlShell(`${projectName} Legal Documents`, bodyHtml);
 }
 
@@ -143,6 +163,8 @@ export async function exportDocx(documents: GeneratedDocuments, projectName: str
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
 export function renderMarkdown(markdown: string): string {
-  return marked.parse(markdown) as string;
+  const raw = marked.parse(markdown) as string;
+  return sanitizeHtml(raw);
 }

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.proxyauth import requireProxyAuth
 from app.schemas.analysis import AnalyzeResponse, GenerateResponse, GithubAnalyzeRequest
 from app.services.analysisservice import (
     analyzeAndGenerateGithub,
@@ -10,7 +11,11 @@ from app.services.analysisservice import (
 from app.services.geminigenerator import GeminiGeneratorError
 from app.uploadlimits import readZipUpload
 
-router = APIRouter(prefix="/api", tags=["analysis"])
+router = APIRouter(
+    prefix="/api",
+    tags=["analysis"],
+    dependencies=[Depends(requireProxyAuth)],
+)
 
 
 def _requireZipName(filename: str | None) -> None:
@@ -25,8 +30,8 @@ async def analyzeZip(file: UploadFile = File(...)) -> AnalyzeResponse:
 
     try:
         analysis = await analyzeZipUpload(data, file.filename)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid archive") from None
     except Exception:
         raise HTTPException(status_code=400, detail="Failed to parse ZIP archive") from None
 
@@ -37,8 +42,8 @@ async def analyzeZip(file: UploadFile = File(...)) -> AnalyzeResponse:
 async def analyzeGithub(body: GithubAnalyzeRequest) -> AnalyzeResponse:
     try:
         analysis = await analyzeGithubRepo(body.githubUrl)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid GitHub URL") from None
     except Exception:
         raise HTTPException(status_code=502, detail="Failed to fetch repository") from None
 
@@ -52,10 +57,10 @@ async def generateFromZip(file: UploadFile = File(...)) -> GenerateResponse:
 
     try:
         return await analyzeAndGenerateZip(data, file.filename)
-    except GeminiGeneratorError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except GeminiGeneratorError:
+        raise HTTPException(status_code=503, detail="Document generation unavailable") from None
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid archive") from None
     except Exception:
         raise HTTPException(status_code=400, detail="Failed to process ZIP archive") from None
 
@@ -64,9 +69,9 @@ async def generateFromZip(file: UploadFile = File(...)) -> GenerateResponse:
 async def generateFromGithub(body: GithubAnalyzeRequest) -> GenerateResponse:
     try:
         return await analyzeAndGenerateGithub(body.githubUrl)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except GeminiGeneratorError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid GitHub URL") from None
+    except GeminiGeneratorError:
+        raise HTTPException(status_code=503, detail="Document generation unavailable") from None
     except Exception:
         raise HTTPException(status_code=502, detail="Failed to process repository") from None

@@ -6,6 +6,7 @@ services:
       - ./backend/.env
     environment:
       - ENVIRONMENT=production
+      - PROXY_SECRET=${PROXY_SECRET}
     expose:
       - "8000"
 
@@ -14,6 +15,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     restart: unless-stopped
+    environment:
+      - PROXY_SECRET=${PROXY_SECRET}
     ports:
       - "80:80"
     depends_on:

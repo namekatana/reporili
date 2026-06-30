@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     maxFileBytes: int = Field(default=500_000, validation_alias="MAX_FILE_BYTES")
     maxTotalBytes: int = Field(default=5_000_000, validation_alias="MAX_TOTAL_BYTES")
     maxUploadBytes: int = Field(default=52_428_800, validation_alias="MAX_UPLOAD_BYTES")
+    proxySecret: str = Field(default="", validation_alias="PROXY_SECRET")
     allowedOrigins: list[str] = Field(
         default=[
             "https://reporili.tech",
