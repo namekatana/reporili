@@ -7,7 +7,6 @@ import tailwindcss from '@tailwindcss/vite';
 
 const siteUrl = process.env.PUBLIC_SITE_URL ?? 'https://reporili.tech';
 
-// https://astro.build/config
 export default defineConfig({
   site: siteUrl,
   integrations: [svelte(), sitemap()],

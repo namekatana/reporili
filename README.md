@@ -159,8 +159,8 @@ App runs on [http://localhost](http://localhost) (nginx → frontend + `/api` �
 reporili/
 ├── backend/          FastAPI, repo parser, Gemini generator
 ├── frontend/         Astro + Svelte UI
-├── docs/readme/      README SVG assets and brand logos
-├── deploy/           nginx config
+├── docs/readme/      README SVG assets
+├── deploy/           nginx, Caddy, backup scripts
 └── docker-compose.yml
 ```
 

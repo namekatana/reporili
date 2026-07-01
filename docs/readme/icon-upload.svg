@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Upload ZIP">
-  <rect width="48" height="48" rx="14" fill="#181818"/>
-  <g transform="translate(12, 12)" fill="#f5f5f5">
-    <path d="M11 14H9V9H6l6-6 6 6h-3v5h-2V9.83L12 6.83 15.17 10H13v4zm-6 4h14v2H5v-2z"/>
-  </g>
-</svg>

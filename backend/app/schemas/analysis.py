@@ -29,7 +29,3 @@ class GenerateResponse(BaseModel):
 
 class GithubAnalyzeRequest(BaseModel):
     githubUrl: str = Field(..., min_length=3, max_length=500, examples=["https://github.com/owner/repo"])
-
-
-class AnalyzeResponse(BaseModel):
-    analysis: RepoAnalysis
