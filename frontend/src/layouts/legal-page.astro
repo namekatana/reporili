@@ -2,10 +2,14 @@
 import "../styles/global.css";
 import CustomScrollbar from "../components/custom-scrollbar.svelte";
 import SiteFooter from "../components/site-footer.svelte";
-import { legalLastUpdated } from "../lib/legal-meta";
+import {
+  legalLastUpdated,
+  legalNav,
+  resolveLegalNavItem,
+  type LegalDocId,
+} from "../lib/legal-meta";
 import {
   buildJsonLd,
-  defaultDescription,
   resolveSiteUrl,
   siteName,
 } from "../lib/site-seo";
@@ -13,10 +17,11 @@ import {
 type LegalPageProps = {
   title: string;
   description: string;
-  documentTitle: string;
+  activeDoc: LegalDocId;
 };
 
-const { title, description, documentTitle } = Astro.props;
+const { title, description, activeDoc } = Astro.props;
+const doc = resolveLegalNavItem(activeDoc);
 
 const siteUrl = resolveSiteUrl();
 const pageUrl = new URL(Astro.url.pathname, siteUrl).href;
@@ -62,19 +67,57 @@ const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
           <a class="legal-brand" href="/">
             <picture>
               <source srcset="/logo.webp" type="image/webp" />
-              <img class="legal-logo" src="/logo.png" alt="Reporili" width="28" height="28" />
+              <img class="legal-logo" src="/logo.png" alt="Reporili" width="30" height="30" />
             </picture>
+            <span class="legal-brand-divider" aria-hidden="true"></span>
             <span class="legal-brand-name">Reporili</span>
           </a>
+          <span class="legal-tag">Beta</span>
         </header>
 
         <main class="legal-main">
-          <article class="legal-article prose-doc">
-            <p class="legal-updated">Last updated: {legalLastUpdated}</p>
-            <h1>{documentTitle}</h1>
+          <section class="legal-hero">
+            <a class="legal-back" href="/">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+              Back to generator
+            </a>
+
+            <p class="legal-eyebrow">Legal</p>
+            <h1 class="legal-headline">{doc.label}</h1>
+            <p class="legal-subline">{doc.subtitle}</p>
+
+            <div class="legal-meta-row">
+              <span class="legal-updated-pill">Updated {legalLastUpdated}</span>
+              <span class="legal-notice-pill">AI drafts, not a law firm</span>
+            </div>
+          </section>
+
+          <nav class="legal-nav" aria-label="Legal documents">
+            {
+              legalNav.map((item) => (
+                <a
+                  class={`legal-nav-link${item.id === activeDoc ? " active" : ""}`}
+                  href={item.href}
+                  aria-current={item.id === activeDoc ? "page" : undefined}
+                >
+                  {item.shortLabel}
+                </a>
+              ))
+            }
+          </nav>
+
+          <article class="legal-article prose-doc prose-legal">
             <slot />
-            <p class="legal-footer-note">Last updated: {legalLastUpdated}</p>
           </article>
+
+          <p class="legal-footer-note">Last updated {legalLastUpdated}</p>
         </main>
 
         <SiteFooter client:load />
@@ -91,7 +134,10 @@ const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
   }
 
   .legal-topbar {
-    max-width: 760px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1120px;
     width: 100%;
     margin: 0 auto;
     padding: 1.25rem 2rem 0;
@@ -100,49 +146,175 @@ const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
   .legal-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.6rem;
     text-decoration: none;
     color: var(--color-bright);
   }
 
   .legal-logo {
     display: block;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
   }
 
+  .legal-brand-divider {
+    width: 1px;
+    height: 18px;
+    background: #333;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
   .legal-brand-name {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
+  }
+
+  .legal-tag {
+    padding: 0.3rem 0.75rem;
+    background: var(--color-float);
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .legal-main {
     flex: 1;
-    max-width: 760px;
+    max-width: 1120px;
     width: 100%;
     margin: 0 auto;
-    padding: 1.5rem 2rem 2.5rem;
+    padding: 1.5rem 2rem 3rem;
+  }
+
+  .legal-hero {
+    padding: 0.5rem 0 1.75rem;
+  }
+
+  .legal-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .legal-back:hover {
+    color: var(--color-bright);
+  }
+
+  .legal-eyebrow {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .legal-headline {
+    font-size: clamp(1.85rem, 4.5vw, 2.75rem);
+    font-weight: 700;
+    color: var(--color-bright);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.85rem;
+    max-width: 18ch;
+  }
+
+  .legal-subline {
+    font-size: 1.02rem;
+    color: var(--color-soft);
+    line-height: 1.65;
+    max-width: 52ch;
+    margin-bottom: 1.25rem;
+  }
+
+  .legal-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .legal-updated-pill,
+  .legal-notice-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.76rem;
+    font-weight: 500;
+  }
+
+  .legal-updated-pill {
+    background: var(--color-surface);
+    color: var(--color-soft);
+  }
+
+  .legal-notice-pill {
+    background: var(--color-float);
+    color: var(--color-muted);
+  }
+
+  .legal-nav {
+    display: flex;
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+    padding: 0.35rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-panel);
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .legal-nav-link {
+    flex-shrink: 0;
+    padding: 0.65rem 1.1rem;
+    border-radius: calc(var(--radius-panel) - 6px);
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .legal-nav-link:hover {
+    color: var(--color-bright);
+    background: var(--color-float);
+  }
+
+  .legal-nav-link.active {
+    background: var(--color-elevated);
+    color: var(--color-bright);
   }
 
   .legal-article {
-    padding: 1.75rem 1.85rem;
+    padding: 2rem 2.15rem;
     background: var(--color-surface);
     border-radius: calc(var(--radius-panel) + 4px);
   }
 
-  .legal-updated {
-    font-size: 0.82rem;
+  .legal-footer-note {
+    margin-top: 1.25rem;
+    padding-left: 0.25rem;
+    font-size: 0.78rem;
     color: var(--color-muted);
-    margin-bottom: 1rem;
   }
 
-  .legal-footer-note {
-    margin-top: 2rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--color-elevated);
-    font-size: 0.82rem;
-    color: var(--color-muted);
+  @media (max-width: 900px) {
+    .legal-headline {
+      max-width: none;
+    }
+
+    .legal-nav {
+      width: 100%;
+    }
   }
 
   @media (max-width: 700px) {
@@ -153,7 +325,13 @@ const googleVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
     }
 
     .legal-article {
-      padding: 1.35rem 1.25rem;
+      padding: 1.35rem 1.2rem;
+    }
+
+    .legal-nav-link {
+      flex: 1;
+      text-align: center;
+      padding: 0.6rem 0.75rem;
     }
   }
 </style>

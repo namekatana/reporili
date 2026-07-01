@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { generateFromGithub, generateFromZip } from "../lib/api-client";
   import { exportHtml, exportMarkdown } from "../lib/export-documents";
   import { saveHistoryEntry } from "../lib/document-history";
@@ -11,16 +12,10 @@
   import GithubInput from "./github-input.svelte";
   import SiteFooter from "./site-footer.svelte";
 
-  const features = [
-    { title: "Privacy Policy", desc: "Data collection, tracking, third parties" },
-    { title: "Terms of Service", desc: "Usage rules, liability, accounts" },
-    { title: "Disclaimer", desc: "AI draft notice, not legal advice" },
-  ];
-
   const steps = [
-    { num: "01", title: "Add your repo", desc: "ZIP upload or GitHub link" },
-    { num: "02", title: "We scan the code", desc: "Authentication, billing, tracking, cloud" },
-    { num: "03", title: "Get your docs", desc: "Export as Markdown, HTML, or DOCX" },
+    { num: "1", title: "Add your code", desc: "Drop a ZIP or paste a public GitHub URL" },
+    { num: "2", title: "We scan your stack", desc: "Auth, payments, analytics, cookies, storage" },
+    { num: "3", title: "Export three docs", desc: "Privacy, Terms, and Disclaimer — MD, HTML, or DOCX" },
   ];
 
   let loading = $state(false);
@@ -30,10 +25,21 @@
   let result = $state<GenerateResponse | null>(null);
   let historyRefresh = $state(0);
   let exportingDocx = $state(false);
+  let resultsSection = $state<HTMLElement | null>(null);
 
   const canGenerate = $derived(
     !loading && (selectedFile !== null || githubUrl.trim().length > 0),
   );
+
+  const inputSummary = $derived.by(() => {
+    if (selectedFile) {
+      return selectedFile.name;
+    }
+    if (githubUrl.trim()) {
+      return githubUrl.trim();
+    }
+    return "";
+  });
 
   function onFileSelect(file: File) {
     selectedFile = file;
@@ -47,6 +53,11 @@
       selectedFile = null;
     }
     error = "";
+  }
+
+  async function scrollToResults() {
+    await tick();
+    resultsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function handleGenerate() {
@@ -68,6 +79,7 @@
       if (result) {
         saveHistoryEntry(result);
         historyRefresh += 1;
+        await scrollToResults();
       }
     } catch (exc) {
       error = exc instanceof Error ? exc.message : "Generation failed";
@@ -113,6 +125,7 @@
       documents: entry.documents,
     };
     error = "";
+    void scrollToResults();
   }
 </script>
 
@@ -127,35 +140,28 @@
       <span class="brand-divider" aria-hidden="true"></span>
       <span class="brand-name">Reporili</span>
     </div>
+
     <span class="tag">Beta</span>
   </header>
 
   <main class="main">
     <section class="hero">
-      <p class="eyebrow">Ship faster, stay compliant</p>
-      <h1 class="headline">Legal docs from your actual codebase</h1>
+      <p class="eyebrow">For developers shipping SaaS and apps</p>
+      <h1 class="headline">Legal docs from your codebase</h1>
       <p class="subline">
-        Drop a repo or paste a GitHub URL. We read your stack and generate Privacy Policy,
-        Terms of Service, and Disclaimer tailored to your product.
+        Upload a repo. Get three tailored documents in minutes — not generic templates.
       </p>
-
-      <div class="feature-row">
-        {#each features as feature}
-          <div class="feature-card">
-            <span class="feature-dot"></span>
-            <div>
-              <p class="feature-title">{feature.title}</p>
-              <p class="feature-desc">{feature.desc}</p>
-            </div>
-          </div>
-        {/each}
-      </div>
     </section>
 
-    <section class="workspace">
+    <section class="workspace" class:workspace-ready={canGenerate}>
       <div class="workspace-head">
-        <h2 class="workspace-title">Generate documents</h2>
-        <p class="workspace-hint">ZIP archive or public GitHub repository</p>
+        <div>
+          <h2 class="workspace-title">Start here</h2>
+          <p class="workspace-hint">ZIP archive or public GitHub repository</p>
+        </div>
+        {#if inputSummary}
+          <span class="input-status">{inputSummary}</span>
+        {/if}
       </div>
 
       <div class="input-split">
@@ -179,17 +185,15 @@
       {/if}
 
       <p class="upload-consent">
-        By uploading or submitting a repository URL, you confirm you have the right to share this
-        code. See our <a href="/terms">Terms of Service</a> and
-        <a href="/privacy">Privacy Policy</a>.
+        You confirm you have the right to share this code. <a href="/terms">Terms</a>
       </p>
 
-      <button class="generate-btn" disabled={!canGenerate} onclick={handleGenerate}>
+      <button class="generate-btn" class:generate-ready={canGenerate} disabled={!canGenerate} onclick={handleGenerate}>
         {#if loading}
           <span class="spinner"></span>
-          Scanning repo and writing docs...
+          Scanning and writing...
         {:else}
-          Generate legal documents
+          Generate documents
         {/if}
       </button>
 
@@ -202,7 +206,7 @@
 
     {#if !result && !loading}
       <section class="steps">
-        <h2 class="steps-title">How it works</h2>
+        <h2 class="section-label">How it works</h2>
         <div class="steps-grid">
           {#each steps as step}
             <div class="step-card">
@@ -216,10 +220,10 @@
     {/if}
 
     {#if result}
-      <section class="results">
+      <section class="results" bind:this={resultsSection}>
         <div class="results-head">
           <h2 class="results-title">Your documents are ready</h2>
-          <p class="results-hint">Review, then export in your preferred format</p>
+          <p class="results-hint">Review each tab, then export. AI drafts — have a lawyer review before publishing.</p>
         </div>
         <AnalysisSummary analysis={result.analysis} />
         <DocumentViewer
@@ -258,6 +262,7 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    flex-shrink: 0;
   }
 
   .brand-divider {
@@ -282,6 +287,7 @@
   }
 
   .tag {
+    flex-shrink: 0;
     padding: 0.3rem 0.75rem;
     background: var(--color-float);
     border-radius: var(--radius-pill);
@@ -301,7 +307,7 @@
   }
 
   .hero {
-    padding: 1rem 0 2.5rem;
+    padding: 0.25rem 0 2rem;
   }
 
   .eyebrow {
@@ -312,58 +318,20 @@
   }
 
   .headline {
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(2rem, 5vw, 2.85rem);
     font-weight: 700;
     color: var(--color-bright);
     line-height: 1.1;
     letter-spacing: -0.03em;
-    margin-bottom: 1rem;
-    max-width: 16ch;
+    margin-bottom: 0.85rem;
+    max-width: 15ch;
   }
 
   .subline {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     color: var(--color-soft);
-    line-height: 1.65;
-    max-width: 58ch;
-    margin-bottom: 2rem;
-  }
-
-  .feature-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-  }
-
-  .feature-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1.1rem 1.25rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-panel);
-  }
-
-  .feature-dot {
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    margin-top: 0.45rem;
-    background: var(--color-bright);
-    border-radius: 50%;
-  }
-
-  .feature-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-bright);
-    margin-bottom: 0.2rem;
-  }
-
-  .feature-desc {
-    font-size: 0.8rem;
-    color: var(--color-muted);
-    line-height: 1.45;
+    line-height: 1.6;
+    max-width: 42ch;
   }
 
   .workspace {
@@ -371,22 +339,44 @@
     background: var(--color-surface);
     border-radius: calc(var(--radius-panel) + 4px);
     margin-bottom: 2rem;
+    transition: box-shadow 0.25s;
+  }
+
+  .workspace-ready {
+    box-shadow: inset 0 0 0 1px #2e2e2e;
   }
 
   .workspace-head {
-    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.35rem;
   }
 
   .workspace-title {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--color-bright);
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
   }
 
   .workspace-hint {
     font-size: 0.88rem;
     color: var(--color-muted);
+  }
+
+  .input-status {
+    flex-shrink: 0;
+    max-width: 220px;
+    padding: 0.45rem 0.85rem;
+    background: var(--color-float);
+    border-radius: var(--radius-pill);
+    font-size: 0.76rem;
+    color: var(--color-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .input-split {
@@ -470,23 +460,28 @@
     gap: 0.65rem;
     width: 100%;
     padding: 1.05rem 1.5rem;
-    background: #f2f2f2;
+    background: #2a2a2a;
     border: none;
     border-radius: var(--radius-panel);
-    color: #0a0a0a;
+    color: var(--color-muted);
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, transform 0.15s, opacity 0.2s;
+    transition: background 0.2s, transform 0.15s, opacity 0.2s, color 0.2s;
   }
 
-  .generate-btn:hover:not(:disabled) {
+  .generate-btn.generate-ready {
+    background: #f2f2f2;
+    color: #0a0a0a;
+  }
+
+  .generate-btn.generate-ready:hover:not(:disabled) {
     background: #fff;
     transform: translateY(-1px);
   }
 
   .generate-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.55;
     cursor: not-allowed;
     transform: none;
   }
@@ -513,17 +508,17 @@
     font-size: 0.88rem;
   }
 
-  .steps {
-    margin-bottom: 2rem;
-  }
-
-  .steps-title {
+  .section-label {
     font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--color-muted);
     margin-bottom: 1rem;
+  }
+
+  .steps {
+    margin-bottom: 2rem;
   }
 
   .steps-grid {
@@ -540,10 +535,10 @@
 
   .step-num {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--color-muted);
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.55rem;
   }
 
   .step-title {
@@ -563,6 +558,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    scroll-margin-top: 1rem;
   }
 
   .results-head {
@@ -570,10 +566,10 @@
   }
 
   .results-title {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: var(--color-bright);
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
   }
 
   .results-hint {
@@ -582,7 +578,10 @@
   }
 
   @media (max-width: 900px) {
-    .feature-row,
+    .headline {
+      max-width: none;
+    }
+
     .steps-grid {
       grid-template-columns: 1fr;
     }
@@ -595,10 +594,16 @@
       padding: 0.25rem 0;
     }
 
-    .headline {
-      max-width: none;
+    .workspace-head {
+      flex-direction: column;
     }
 
+    .input-status {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 700px) {
     .topbar,
     .main {
       padding-left: 1.25rem;
